@@ -1,68 +1,89 @@
-import React from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
+import { Link } from 'react-router-dom'
 import { FiChevronRight } from "react-icons/fi";
-import { Title, Form, Repositories, Repository } from './styles';
 
-const Dashboard: React.FC = () => (
+import api from '../../services/api'
+import logoImg from '../../assets/logo.svg'
 
+import { Title, Form, Repositories, Error } from './styles';
 
-  <>
-    <Title>Explore repositorios no Github</Title>
+interface Repository {
+  full_name: string,
+  description: string,
+  owner: {
+    login: string,
+    avatar_url: string
+  }
+}
+const Dashboard: React.FC = () => {
 
-    <Form>
-      <input type="text" placeholder='Digite aqui o repositorio' />
+  const [repositories, setRepositories] = useState<Repository[]>(() => {
 
-      <button type="submit">Pesquisar</button>
-    </Form>
+    const storedRepositories = localStorage.getItem('@GithubExplorer:repositories')
 
-    <Repositories>
+    if (storedRepositories) {
+      return JSON.parse(storedRepositories)
+    }
 
+    return []
+  });
+  const [newRepo, setNewRepo] = useState('')
+  const [inputError, setInputError] = useState('')
 
-      <a href="">
-        <img src="https://avatars2.githubusercontent.com/u/11820690?s=460&u=977d19e677c749524da5dbf15328f4f0a66db180&v=4" alt="" />
+  useEffect(() => {
+    localStorage.setItem('@GithubExplorer:repositories', JSON.stringify(repositories))
+  }, [repositories])
 
-        <div>
-          <strong>DnD Mobile</strong>
-          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. </p>
-        </div>
+  const handleAddRepository = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault()
 
-        <FiChevronRight size='20' />
-      </a>
+    if (!inputError) {
+      setInputError('Pesquise por autor/repositório')
+      return
+    }
 
-      <a href="">
-        <img src="https://avatars2.githubusercontent.com/u/11820690?s=460&u=977d19e677c749524da5dbf15328f4f0a66db180&v=4" alt="" />
+    try {
+      const response = await api.get<Repository>(`repos/${newRepo}`)
+      const repository = response.data;
 
-        <div>
-          <strong>DnD Mobile</strong>
-          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. </p>
-        </div>
+      setRepositories([...repositories, repository])
+      setNewRepo('')
+      setInputError('')
+    } catch (error) {
+      setInputError('Repositório não encontrado')
+    }
+  }
 
-        <FiChevronRight size='20' />
-      </a>
+  return (
+    <>
+      <img src={logoImg} alt="Github_Explorer" />
+      <Title>Explore repositorios no Github</Title>
+      <Form hasError={!!inputError} onSubmit={handleAddRepository}>
+        <input
+          value={newRepo}
+          onChange={(e) => setNewRepo(e.target.value)}
+          type="text"
+          placeholder='Digite aqui o repositorio' />
+        <button type="submit">Pesquisar</button>
+      </Form>
+      {inputError && <Error>{inputError}</Error>}
+      <Repositories>
+        {
+          repositories.map(repository => (
+            <Link key={repository.full_name} to={`repositories/${repository.full_name}`}>
+              <img src={repository.owner.avatar_url} alt={repository.owner.login} />
+              <div>
+                <strong>{repository.full_name}</strong>
+                <p>{repository.description}</p>
+              </div>
+              <FiChevronRight size='20' />
+            </Link>
+          ))
+        }
 
-      <a href="">
-        <img src="https://avatars2.githubusercontent.com/u/11820690?s=460&u=977d19e677c749524da5dbf15328f4f0a66db180&v=4" alt="" />
-
-        <div>
-          <strong>DnD Mobile</strong>
-          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. </p>
-        </div>
-
-        <FiChevronRight size='20' />
-      </a>
-      <a href="">
-        <img src="https://avatars2.githubusercontent.com/u/11820690?s=460&u=977d19e677c749524da5dbf15328f4f0a66db180&v=4" alt="" />
-
-        <div>
-          <strong>DnD Mobile</strong>
-          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. </p>
-        </div>
-
-        <FiChevronRight size='20' />
-      </a>
-
-
-    </Repositories>
-  </>
-)
+      </Repositories>
+    </>
+  )
+}
 
 export default Dashboard;

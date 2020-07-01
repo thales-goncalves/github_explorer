@@ -40,8 +40,21 @@
         ]
       }
     ],
+    "react/jsx-max-props-per-line": [
+      1,
+      {
+        "maximum": 1,
+        "when": "always"
+      }
+    ],
     "import/prefer-default-export": "off",
-    "import/not-unsolved":[],
+    "@typescript-eslint/explicit-function-return-type": [
+      "error",
+      {
+        "allowExpression": true
+      }
+    ],
+    "import/not-unsolved": [],
     "import/extensions": [
       "error",
       "ignorePackages",
